@@ -40,4 +40,4 @@ jobs:
         run: dotnet build
 
       - name: 🏃🏼‍♀️‍➡️ Run code
-        run: dotnet run
+        run: dotnet run --project CleanCodeDevops.App/CleanCodeDevops.App.csproj
