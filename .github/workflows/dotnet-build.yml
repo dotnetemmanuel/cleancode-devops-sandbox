@@ -1,1 +1,12 @@
+name: Manual .NET Build
 
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔔 Start build process
+        run: echo "Build process has started..."
