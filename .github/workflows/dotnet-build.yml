@@ -38,3 +38,6 @@ jobs:
 
       - name: 🏗️ Build project
         run: dotnet build
+
+      - name: 🏃🏼‍♀️‍➡️ Run code
+        run: dotnet run
