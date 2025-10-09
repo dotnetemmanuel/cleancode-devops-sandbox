@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: 🛠️ Install .NET 9
-        uses: actions/setup-dotnet@v.5
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '9.0.x'
 
