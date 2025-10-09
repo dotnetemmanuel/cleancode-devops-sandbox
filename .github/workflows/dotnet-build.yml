@@ -11,6 +11,11 @@ jobs:
       - name: 🔔 Start build process
         run: echo "Build process has started..."
 
+      - &echo-template
+        name: 🔔 Echo template
+        run: echo "This is a reusable echo step."
+        shell: bash # will persist unless explicitly overridden
+
       - name: 📝 Show runtime context
         run: |
           echo "🔧 Runner OS: ${{ runner.os}}"
@@ -20,3 +25,9 @@ jobs:
           echo "👤 Actor: ${{ github.actor }}"
           echo "🔢 Run number: ${{ github.run_number }}"
           echo "🌿 Branch: ${{ github.ref }}"
+          
+      - <<: *echo-template
+        name: ✅ Build process complete
+        run: echo "Build process is finished"
+        # shell bash is inherited from the anchor
+        
