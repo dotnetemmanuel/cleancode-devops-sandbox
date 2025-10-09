@@ -27,3 +27,14 @@ jobs:
           echo "🌿 Branch: ${{ github.ref }}"
           
       - *echo-template
+
+      - name: 📥 Checkout code # downloads the repository's code into the runner's workspace
+        uses: actions/checkout@v5
+
+      - name: 🛠️ Install .NET 9
+        uses: actions/setup-dotnet@v.5
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: 🏗️ Build project
+        run: dotnet build
