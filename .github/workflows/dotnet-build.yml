@@ -26,8 +26,4 @@ jobs:
           echo "🔢 Run number: ${{ github.run_number }}"
           echo "🌿 Branch: ${{ github.ref }}"
           
-      - <<: *echo-template
-        name: ✅ Build process complete
-        run: echo "Build process is finished"
-        # shell bash is inherited from the anchor
-        
+      - *echo-template
