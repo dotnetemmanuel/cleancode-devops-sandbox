@@ -14,8 +14,19 @@ jobs:
     steps:
       - name: Step with its own env
         env:
-          STEP_LEVEL: "Step scope variable"
+          STEP_LEVEL1: "Step scope variable 1"
         run: |
           echo "Workflow level: $WORKFLOW_LEVEL"
           echo "Job level: $JOB_LEVEL"
-          echo "Steph level: $STEP_LEVEL"
+          echo "Step level: $STEP_LEVEL1"
+    
+      - name: Step with its different env
+        env:
+          STEP_LEVEL2: "Step scope variable 2"
+        run: |
+          if [ -z "$STEP_LEVEL1" ]; then
+            echo "STEP_LEVEL1 is not available in this step — fallback message shown."
+          else
+            echo "STEP_LEVEL1 is: $STEP_LEVEL1"
+          fi
+        # -z tests if a variable is eiher unset or empty
