@@ -1,0 +1,21 @@
+name: Env Context Demo
+
+on:
+  workflow_dispatch
+
+env: 
+  WORKFLOW_LEVEL: "Workflow scope variable"
+
+jobs: 
+  show-env:
+    runs-on: ubuntu-latest
+    env:
+      JOB_LEVEL: "Job scope variable"
+    steps:
+      - name: Step with its own env
+        env:
+          STEP_LEVEL: "Step scope variable"
+        run: |
+          echo "Workflow level: $WORKFLOW_LEVEL"
+          echo "Job level: $JOB_LEVEL"
+          echo "Steph level: $STEP_LEVEL"
