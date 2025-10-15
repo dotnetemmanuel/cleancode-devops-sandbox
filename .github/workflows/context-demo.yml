@@ -9,3 +9,6 @@ jobs:
     steps:
       - name: Print GitHub context
         run: echo "${{ toJSON(github) }}"
+
+      - name: Print Job context
+        run: echo "${{ toJSON(job) }}"
