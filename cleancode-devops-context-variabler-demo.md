@@ -52,6 +52,18 @@ jobs:
           echo "Workflow level: $WORKFLOW_LEVEL"
           echo "Job level: $JOB_LEVEL"
           echo "Step level: $STEP_LEVEL"
+
+      #implementera efter att visat att workflow fungerar
+      - name: Try to access STEP_LEVEL1 in another step
+            env:
+              STEP_LEVEL2: "Step scope variable 2"
+            run: |
+              if [ -z "$STEP_LEVEL1" ]; then
+                echo "STEP_LEVEL1 is not available in this step — fallback message shown."
+              else
+                echo "STEP_LEVEL1 is: $STEP_LEVEL1"
+              fi
+            # -z tests if a variable is eiher unset or empty
 ```
 
 📌 Notera att varje env: block är isolerat — step-variabler är inte tillgängliga utanför sitt step.
@@ -79,6 +91,15 @@ jobs:
       - name: Runs only if cancelled (will not run here)
         if: cancelled()
         run: echo "This runs only if cancelled"
+
+      - name: Simulating a failing step
+        run: |
+          echo "Step fails intentionally"
+          exit 1
+
+      - name: Runs only if previous fails
+        if: failure()
+        run: echo "Previous fails, therefore I run"
 ```
 
 🧠 Här visar vi hur success(), cancelled(), failure() och always() fungerar i if:-block.
@@ -90,7 +111,7 @@ Vi bygger ett jobb som körs i flera kombinationer av OS och .NET-versioner.
 name: Matrix Demo
 
 on:
-  workflow_dispatch:
+  workflow_dispatch
 
 jobs:
   build:
@@ -98,15 +119,15 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        version: [8.0, 7.0, 6.0]
+        version: [9.0, 8.0]
 
     steps:
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v5.0.0
         with:
           dotnet-version: ${{ matrix.version }}
 
-      - name: Print matrix values
+      - name: Print maxtrix values
         run: |
           echo "Running on OS: ${{ matrix.os }}"
           echo "Using .NET version: ${{ matrix.version }}"
