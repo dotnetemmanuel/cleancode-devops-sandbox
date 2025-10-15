@@ -20,7 +20,7 @@ jobs:
           echo "Job level: $JOB_LEVEL"
           echo "Step level: $STEP_LEVEL1"
     
-      - name: Step with its different env
+      - name: Try to access STEP_LEVEL1 in another step
         env:
           STEP_LEVEL2: "Step scope variable 2"
         run: |
