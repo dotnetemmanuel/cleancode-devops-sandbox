@@ -1,0 +1,23 @@
+name: Matrix Demo
+
+on:
+  workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        version: [9.0, 8.0]
+
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5.0.0
+        with:
+          dotnet-version: ${{ matrix.version }}
+
+      - name: Print maxtrix values
+        run: |
+          echo "Running on OS: ${{ matrix.os }}"
+          echo "Using .NET version: ${{ matrix.version }}"
