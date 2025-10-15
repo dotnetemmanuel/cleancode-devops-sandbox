@@ -131,6 +131,13 @@ jobs:
         run: |
           echo "Running on OS: ${{ matrix.os }}"
           echo "Using .NET version: ${{ matrix.version }}"
+
+  post-build:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post-build summary
+        run: echo "All matrix builds are complete — running post-build job"
 ```
 
 🧮 Detta skapar 6 parallella körningar — en för varje kombination av OS och version.
