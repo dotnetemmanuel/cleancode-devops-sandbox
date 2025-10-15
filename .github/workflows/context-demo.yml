@@ -12,3 +12,6 @@ jobs:
 
       - name: Print Job context
         run: echo "${{ toJSON(job) }}"
+
+      - name: Print Runner context
+        run: echo "${{ toJSON(runner) }}"
