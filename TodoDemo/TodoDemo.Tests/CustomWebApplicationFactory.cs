@@ -1,0 +1,35 @@
+﻿using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using TodoDemo.Data;
+
+namespace TodoDemo.Tests;
+
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+{
+   protected override IHost CreateHost(IHostBuilder builder)
+   {
+      builder.UseEnvironment("Test");
+      builder.ConfigureServices(services =>
+      {
+         // Remove the app's DbContext registration
+         var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<TodoDbContext>));
+         if (descriptor != null)
+            services.Remove(descriptor);
+
+         services.AddDbContext<TodoDbContext>(options =>
+         {
+            options.UseSqlServer(
+               "Server=.\\SQLExpress;Database=TodoDemo;Trusted_Connection=True;TrustServerCertificate=True");
+         });
+
+         var sp = services.BuildServiceProvider();
+         using var scope = sp.CreateScope();
+         var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+         db.Database.EnsureDeleted();
+         db.Database.EnsureCreated();
+      });
+      return base.CreateHost(builder);
+   }
+}

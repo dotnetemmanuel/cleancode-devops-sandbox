@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.2"/>
+        <PackageReference Include="FluentAssertions" Version="8.7.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.10" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0"/>
+        <PackageReference Include="xunit" Version="2.9.2"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\TodoDemo\TodoDemo.csproj" />
+    </ItemGroup>
+
+    <!--Needs to be added for tests to run. Files need to be copied from web project to test project -->
+    <PropertyGroup>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+   
+    <Target Name="EnsureWebAppBuiltAndCopyDeps" AfterTargets="Build">
+        <MSBuild
+                Projects="..\TodoDemo\TodoDemo.csproj"
+                Targets="Build"
+                Properties="Configuration=$(Configuration);TargetFramework=net9.0" />
+
+        <ItemGroup>
+            <WebDepsFiles Include="..\TodoDemo\bin\$(Configuration)\net9.0\*.deps.json" Condition="Exists('..\TodoDemo\bin\$(Configuration)\net9.0')" />
+            <WebTestHostFiles Include="..\TodoDemo\bin\$(Configuration)\net9.0\testhost*.deps.json" Condition="Exists('..\TodoDemo\bin\$(Configuration)\net9.0')" />
+        </ItemGroup>
+
+        <Copy
+                SourceFiles="@(WebDepsFiles);@(WebTestHostFiles)"
+                DestinationFolder="$(OutputPath)"
+                SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="CopyTestHostFromNuGet" AfterTargets="Build">
+        <ItemGroup>
+            <NuGetTestHostFiles Include="$(NuGetPackageRoot)microsoft.testplatform.testhost\**\testhost*.deps.json" />
+            <NuGetTestHostFiles Include="$(UserProfile)\.nuget\packages\microsoft.testplatform.testhost\**\testhost*.deps.json" />
+        </ItemGroup>
+
+        <Copy
+                SourceFiles="@(NuGetTestHostFiles)"
+                DestinationFolder="$(OutputPath)"
+                SkipUnchangedFiles="true"
+                ContinueOnError="true" />
+    </Target>
+
+</Project>
