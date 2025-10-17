@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestabilityDemo.Core", "Tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestabilityDemo.Tests", "TestabilityDemo.Tests\TestabilityDemo.Tests.csproj", "{287D4E8C-5010-4B8F-BF78-E85E5C762C59}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TodoDemo", "TodoDemo\TodoDemo\TodoDemo.csproj", "{3BF9AF8E-A75C-4480-9F8E-9488439289C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,5 +68,9 @@ Global
 		{287D4E8C-5010-4B8F-BF78-E85E5C762C59}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{287D4E8C-5010-4B8F-BF78-E85E5C762C59}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{287D4E8C-5010-4B8F-BF78-E85E5C762C59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BF9AF8E-A75C-4480-9F8E-9488439289C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BF9AF8E-A75C-4480-9F8E-9488439289C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BF9AF8E-A75C-4480-9F8E-9488439289C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BF9AF8E-A75C-4480-9F8E-9488439289C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

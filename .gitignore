@@ -419,3 +419,6 @@ FodyWeavers.xsd
 
 #Jetbrains
 .idea/
+
+appsettings.json
+nul

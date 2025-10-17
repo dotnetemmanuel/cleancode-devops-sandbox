@@ -1,0 +1,134 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@inject System.Net.Http.HttpClient Http
+@inject IJSRuntime JS
+
+<div class="p-2">
+    <h5>@(Model.Id == 0 ? "Create ToDo" : "Edit ToDo")</h5>
+
+    <div class="mb-2">
+        <label class="form-label">Title</label>
+        <input class="form-control" @bind="Model.Title" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" @bind="Model.Description"></textarea>
+    </div>
+
+    <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" @bind="Model.IsDone" id="isDone" />
+        <label class="form-check-label" for="isDone">Done</label>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-secondary me-2" @onclick="Cancel" disabled="@isSaving">Cancel</button>
+        <button type="button" class="btn btn-primary" @onclick="Save" disabled="@isSaving">
+            @if (isSaving)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            }
+            Save
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="mt-2 alert @messageClass">@message</div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; } = 0;
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+
+    TodoModel Model = new();
+
+    string? message;
+    string messageClass = "alert-info";
+    bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != 0)
+        {
+            var item = await Http.GetFromJsonAsync<TodoModel>($"api/todos/{Id}");
+            if (item != null) Model = item;
+        }
+        else
+        {
+            Model = new TodoModel();
+        }
+    }
+
+    async Task Save()
+    {
+        if (isSaving) return;
+        isSaving = true;
+        message = "Saving...";
+        messageClass = "alert-info";
+        StateHasChanged();
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Model.Title))
+            {
+                message = "Title is required.";
+                messageClass = "alert-warning";
+                return;
+            }
+
+            HttpResponseMessage res;
+            if (Model.Id == 0)
+            {
+                var create = new { Title = Model.Title, Description = Model.Description, IsDone = Model.IsDone };
+                res = await Http.PostAsJsonAsync("api/todos", create);
+            }
+            else
+            {
+                var update = new { Id = Model.Id, Title = Model.Title, Description = Model.Description, IsDone = Model.IsDone };
+                res = await Http.PutAsJsonAsync($"api/todos/{Model.Id}", update);
+            }
+
+            if (res.IsSuccessStatusCode)
+            {
+                message = Model.Id == 0 ? "Created." : "Updated.";
+                messageClass = "alert-success";
+                StateHasChanged();
+                await Task.Delay(300);
+                await OnSaved.InvokeAsync();
+            }
+            else
+            {
+                var body = await res.Content.ReadAsStringAsync();
+                message = $"Request failed: {(int)res.StatusCode} {res.ReasonPhrase}. {body}";
+                messageClass = "alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Error: {ex.Message}";
+            messageClass = "alert-danger";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    void Cancel()
+    {
+        _ = OnCancelled.InvokeAsync();
+    }
+
+    class TodoModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public bool IsDone { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

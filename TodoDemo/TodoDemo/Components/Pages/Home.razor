@@ -1,0 +1,106 @@
+﻿@page "/"
+@using TodoDemo.Shared
+
+@inject System.Net.Http.HttpClient Http
+
+<h3>ToDo list</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="ShowCreate">Create new</button>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (todos == null || !todos.Any())
+{
+    <p>No todos yet.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr><th>Title</th><th>Done</th><th>Created</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var t in todos)
+            {
+                <tr>
+                    <td>@t.Title</td>
+                    <td>@(t.IsDone ? "Yes" : "No")</td>
+                    <td>@t.CreatedAt.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary me-1" @onclick="() => ShowEdit(t.Id)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(t.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showEditor)
+{
+    <div class="modal-backdrop"></div>
+    <div class="modal-root">
+        <div class="modal-card">
+            <CreateEditTodo Id="editingId" OnSaved="OnSaved" OnCancelled="OnCancelled" />
+        </div>
+    </div>
+}
+
+@code {
+    List<TodoDto>? todos;
+    bool isLoading = true;
+
+    // Editor state
+    bool showEditor = false;
+    int editingId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Reload();
+    }
+
+    async Task Reload()
+    {
+        isLoading = true;
+        todos = await Http.GetFromJsonAsync<List<TodoDto>>("api/todos");
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    void ShowCreate()
+    {
+        editingId = 0;
+        showEditor = true;
+    }
+
+    void ShowEdit(int id)
+    {
+        editingId = id;
+        showEditor = true;
+    }
+
+    async Task Delete(int id)
+    {
+        var res = await Http.DeleteAsync($"api/todos/{id}");
+        if (res.IsSuccessStatusCode) await Reload();
+    }
+
+    async Task OnSaved()
+    {
+        showEditor = false;
+        editingId = 0;
+        await Reload();
+    }
+
+    void OnCancelled()
+    {
+        showEditor = false;
+        editingId = 0;
+    }
+
+    record TodoDto(int Id, string Title, string? Description, bool IsDone, DateTime CreatedAt);
+}
