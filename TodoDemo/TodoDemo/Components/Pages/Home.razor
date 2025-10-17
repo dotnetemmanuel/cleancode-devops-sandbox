@@ -3,46 +3,123 @@
 
 @inject System.Net.Http.HttpClient Http
 
-<h3>ToDo list</h3>
+<h3>ToDo List</h3>
 
 <div class="mb-3">
-    <button class="btn btn-primary" @onclick="ShowCreate">Create new</button>
+    <button class="btn btn-primary create-btn" @onclick="ShowCreate">
+        <i class="fas fa-plus me-2"></i>Create New Todo
+    </button>
 </div>
 
 @if (isLoading)
 {
-    <p><em>Loading...</em></p>
+    <div class="loading-container">
+        <div class="spinner-border text-primary me-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <span class="loading-text">Loading your todos...</span>
+    </div>
 }
 else if (todos == null || !todos.Any())
 {
-    <p>No todos yet.</p>
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="fas fa-clipboard-list fa-5x text-muted opacity-50"></i>
+        </div>
+        <h5 class="text-muted">No todos yet</h5>
+        <p class="text-muted">Start by creating your first todo item!</p>
+        <button class="btn btn-primary" @onclick="ShowCreate">
+            <i class="fas fa-plus me-2"></i>Create Your First Todo
+        </button>
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr><th>Title</th><th>Done</th><th>Created</th><th></th></tr>
-        </thead>
-        <tbody>
-            @foreach (var t in todos)
-            {
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
                 <tr>
-                    <td>@t.Title</td>
-                    <td>@(t.IsDone ? "Yes" : "No")</td>
-                    <td>@t.CreatedAt.ToLocalTime().ToString("g")</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary me-1" @onclick="() => ShowEdit(t.Id)">Edit</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => Delete(t.Id)">Delete</button>
-                    </td>
+                    <th><i class="fas fa-tasks me-2"></i>Title</th>
+                    <th><i class="fas fa-check-circle me-2"></i>Status</th>
+                    <th><i class="fas fa-calendar me-2"></i>Created</th>
+                    <th><i class="fas fa-cogs me-2"></i>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var (todo, index) in todos.Select((t, i) => (t, i)))
+                {
+                    <tr class="todo-item-enter" style="animation-delay: @(index * 0.1)s">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                @if (todo.IsDone)
+                                {
+                                    <i class="fas fa-check-circle status-icon completed me-2" 
+                                       @onclick="() => ToggleStatus(todo.Id, false)" 
+                                       title="Click to mark as pending"></i>
+                                    <span class="text-decoration-line-through text-muted">@todo.Title</span>
+                                }
+                                else
+                                {
+                                    <i class="far fa-circle status-icon pending me-2" 
+                                       @onclick="() => ToggleStatus(todo.Id, true)" 
+                                       title="Click to mark as completed"></i>
+                                    <strong>@todo.Title</strong>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(todo.Description))
+                            {
+                                <small class="text-muted d-block mt-1">@todo.Description</small>
+                            }
+                        </td>
+                        <td>
+                            @if (todo.IsDone)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Completed
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <span class="text-muted">
+                                @todo.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                            </span>
+                            <small class="d-block text-muted">
+                                @todo.CreatedAt.ToLocalTime().ToString("HH:mm")
+                            </small>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-secondary" @onclick="() => ShowEdit(todo.Id)" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => Delete(todo.Id)" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="mt-3 text-muted">
+        <small>
+            <i class="fas fa-info-circle me-1"></i>
+            Total: @todos.Count todos (@todos.Count(t => t.IsDone) completed, @todos.Count(t => !t.IsDone) pending)
+        </small>
+    </div>
 }
 
 @if (showEditor)
 {
-    <div class="modal-backdrop"></div>
+    <div class="modal-backdrop" @onclick="OnCancelled"></div>
     <div class="modal-root">
         <div class="modal-card">
             <CreateEditTodo Id="editingId" OnSaved="OnSaved" OnCancelled="OnCancelled" />
@@ -66,6 +143,8 @@ else
     async Task Reload()
     {
         isLoading = true;
+        StateHasChanged();
+        await Task.Delay(100); // Small delay to show loading state
         todos = await Http.GetFromJsonAsync<List<TodoDto>>("api/todos");
         isLoading = false;
         StateHasChanged();
@@ -86,7 +165,55 @@ else
     async Task Delete(int id)
     {
         var res = await Http.DeleteAsync($"api/todos/{id}");
-        if (res.IsSuccessStatusCode) await Reload();
+        if (res.IsSuccessStatusCode) 
+        {
+            await Reload();
+        }
+    }
+
+    async Task ToggleStatus(int id, bool newStatus)
+    {
+        if (todos == null) return;
+
+        // Find the todo in our local list
+        var todoIndex = todos.FindIndex(t => t.Id == id);
+        if (todoIndex == -1) return;
+
+        var currentTodo = todos[todoIndex];
+
+        // Update local state immediately for instant UI feedback
+        var updatedTodo = currentTodo with { IsDone = newStatus };
+        todos[todoIndex] = updatedTodo;
+        StateHasChanged(); // Trigger UI update immediately
+
+        // Update server in background
+        try
+        {
+            var update = new { 
+                Id = currentTodo.Id, 
+                Title = currentTodo.Title, 
+                Description = currentTodo.Description, 
+                IsDone = newStatus,
+                CreatedAt = currentTodo.CreatedAt
+            };
+
+            var res = await Http.PutAsJsonAsync($"api/todos/{id}", update);
+            
+            // If server update fails, revert the local change
+            if (!res.IsSuccessStatusCode)
+            {
+                todos[todoIndex] = currentTodo; // Revert to original state
+                StateHasChanged();
+                // Optionally show error message here
+            }
+        }
+        catch (Exception)
+        {
+            // Revert on exception
+            todos[todoIndex] = currentTodo;
+            StateHasChanged();
+            // Optionally show error message here
+        }
     }
 
     async Task OnSaved()
