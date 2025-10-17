@@ -52,4 +52,4 @@ app.MapRazorComponents<App>()
 
 app.Run();
 
-partial class Program { }
+public partial class Program { }
