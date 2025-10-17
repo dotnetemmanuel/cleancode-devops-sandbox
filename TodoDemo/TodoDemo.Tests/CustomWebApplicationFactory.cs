@@ -21,7 +21,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
          services.AddDbContext<TodoDbContext>(options =>
          {
             options.UseSqlServer(
-               "Server=.\\SQLExpress;Database=TodoDemo;Trusted_Connection=True;TrustServerCertificate=True");
+               "Server=.\\SQLExpress;Database=TodoDemoTest;Trusted_Connection=True;TrustServerCertificate=True");
          });
 
          var sp = services.BuildServiceProvider();
