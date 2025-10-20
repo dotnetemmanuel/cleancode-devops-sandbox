@@ -8,16 +8,21 @@ Visa hur man skriver och kör integrationstester i .NET för ett riktigt API och
 
 ## **Steg 1: Projektstruktur och förutsättningar**
 
+**Visa appen i webbläsaren**
+
 **Visa i Rider:**
 - Lösningen innehåller:
   - `TodoDemo` (huvudprojektet, API + databas)
   - `TodoDemo.Tests` (testprojektet, xUnit)
+
       => SKAPA
+
       => Lägg till följande nuget packages:
       - `FluentAssertions`
       - `Microsoft.AspNetCore.Mvc.Testing`
       - `Microsoft.Data.SqlClient`
       - `Microsoft.EntityFrameworkCore.SqlServer`
+
       => lägga till 'Följande kod till test csproj
 
       ```xml
