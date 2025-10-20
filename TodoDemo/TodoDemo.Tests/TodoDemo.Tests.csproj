@@ -26,7 +26,7 @@
       <ProjectReference Include="..\TodoDemo\TodoDemo.csproj" />
     </ItemGroup>
 
-    Needs to be added for tests to run. Files need to be copied from web project to test project 
+<!--    Needs to be added for tests to run. Files need to be copied from web project to test project -->
     <PropertyGroup>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
