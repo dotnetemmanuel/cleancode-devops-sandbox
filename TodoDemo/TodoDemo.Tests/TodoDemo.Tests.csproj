@@ -26,39 +26,39 @@
       <ProjectReference Include="..\TodoDemo\TodoDemo.csproj" />
     </ItemGroup>
 
-    <!--Needs to be added for tests to run. Files need to be copied from web project to test project -->
-    <PropertyGroup>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    </PropertyGroup>
-   
-    <Target Name="EnsureWebAppBuiltAndCopyDeps" AfterTargets="Build">
-        <MSBuild
-                Projects="..\TodoDemo\TodoDemo.csproj"
-                Targets="Build"
-                Properties="Configuration=$(Configuration);TargetFramework=net9.0" />
+<!--    Needs to be added for tests to run. Files need to be copied from web project to test project -->
+<!--    <PropertyGroup>-->
+<!--        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>-->
+<!--    </PropertyGroup>-->
+<!--   -->
+<!--    <Target Name="EnsureWebAppBuiltAndCopyDeps" AfterTargets="Build">-->
+<!--        <MSBuild-->
+<!--                Projects="..\TodoDemo\TodoDemo.csproj"-->
+<!--                Targets="Build"-->
+<!--                Properties="Configuration=$(Configuration);TargetFramework=net9.0" />-->
 
-        <ItemGroup>
-            <WebDepsFiles Include="..\TodoDemo\bin\$(Configuration)\net9.0\*.deps.json" Condition="Exists('..\TodoDemo\bin\$(Configuration)\net9.0')" />
-            <WebTestHostFiles Include="..\TodoDemo\bin\$(Configuration)\net9.0\testhost*.deps.json" Condition="Exists('..\TodoDemo\bin\$(Configuration)\net9.0')" />
-        </ItemGroup>
+<!--        <ItemGroup>-->
+<!--            <WebDepsFiles Include="..\TodoDemo\bin\$(Configuration)\net9.0\*.deps.json" Condition="Exists('..\TodoDemo\bin\$(Configuration)\net9.0')" />-->
+<!--            <WebTestHostFiles Include="..\TodoDemo\bin\$(Configuration)\net9.0\testhost*.deps.json" Condition="Exists('..\TodoDemo\bin\$(Configuration)\net9.0')" />-->
+<!--        </ItemGroup>-->
 
-        <Copy
-                SourceFiles="@(WebDepsFiles);@(WebTestHostFiles)"
-                DestinationFolder="$(OutputPath)"
-                SkipUnchangedFiles="true" />
-    </Target>
+<!--        <Copy-->
+<!--                SourceFiles="@(WebDepsFiles);@(WebTestHostFiles)"-->
+<!--                DestinationFolder="$(OutputPath)"-->
+<!--                SkipUnchangedFiles="true" />-->
+<!--    </Target>-->
 
-    <Target Name="CopyTestHostFromNuGet" AfterTargets="Build">
-        <ItemGroup>
-            <NuGetTestHostFiles Include="$(NuGetPackageRoot)microsoft.testplatform.testhost\**\testhost*.deps.json" />
-            <NuGetTestHostFiles Include="$(UserProfile)\.nuget\packages\microsoft.testplatform.testhost\**\testhost*.deps.json" />
-        </ItemGroup>
+<!--    <Target Name="CopyTestHostFromNuGet" AfterTargets="Build">-->
+<!--        <ItemGroup>-->
+<!--            <NuGetTestHostFiles Include="$(NuGetPackageRoot)microsoft.testplatform.testhost\**\testhost*.deps.json" />-->
+<!--            <NuGetTestHostFiles Include="$(UserProfile)\.nuget\packages\microsoft.testplatform.testhost\**\testhost*.deps.json" />-->
+<!--        </ItemGroup>-->
 
-        <Copy
-                SourceFiles="@(NuGetTestHostFiles)"
-                DestinationFolder="$(OutputPath)"
-                SkipUnchangedFiles="true"
-                ContinueOnError="true" />
-    </Target>
+<!--        <Copy-->
+<!--                SourceFiles="@(NuGetTestHostFiles)"-->
+<!--                DestinationFolder="$(OutputPath)"-->
+<!--                SkipUnchangedFiles="true"-->
+<!--                ContinueOnError="true" />-->
+<!--    </Target>-->
 
 </Project>
