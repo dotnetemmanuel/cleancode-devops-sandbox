@@ -88,8 +88,9 @@ Visa hur man skriver och kör integrationstester i .NET för ett riktigt API och
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Server=.\\SQLEXPRESS;Database=TodoDemoTestDb;Trusted_Connection=True;TrustServerCertificate=True"
-  }
+    "Default": "Data Source=:memory:"
+  },
+  "UseSqlite": true
 }
 ```
 
@@ -120,33 +121,39 @@ namespace TodoDemo.Tests;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
-    protected override IHost CreateHost(IHostBuilder builder)
-    {
+  private SqliteConnection? _connection;
+
+     protected override IHost CreateHost(IHostBuilder builder)
+     {
         builder.UseEnvironment("Test");
         builder.ConfigureServices(services =>
         {
-            // Ta bort befintlig DbContext
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<TodoDbContext>));
-            if (descriptor != null)
-                services.Remove(descriptor);
+           var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<TodoDbContext>));
+           if (descriptor != null)
+              services.Remove(descriptor);
 
-            // Lägg till testdatabas (SQL Server eller SQLite)
-            services.AddDbContext<TodoDbContext>(options =>
-            {
-                options.UseSqlServer("Server=.\\SQLEXPRESS;Database=TodoDemoTestDb;Trusted_Connection=True;TrustServerCertificate=True");
-            });
+           _connection = new SqliteConnection("Data Source=:memory:");
+           _connection.Open();
 
-            // Nollställ databasen inför varje testrunda
-            var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
-            db.Database.EnsureDeleted();
-            db.Database.EnsureCreated();
+           services.AddDbContext<TodoDbContext>(options =>
+           {
+              options.UseSqlite(_connection);
+           });
+
+           var sp = services.BuildServiceProvider();
+           using var scope = sp.CreateScope();
+           var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+           db.Database.EnsureCreated();
         });
-
         return base.CreateHost(builder);
-    }
+     }
+
+     protected override void Dispose(bool disposing)
+     {
+        base.Dispose(disposing);
+        _connection?.Close();
+        _connection?.Dispose();
+     }
 }
 ```
 
