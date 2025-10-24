@@ -422,3 +422,6 @@ FodyWeavers.xsd
 
 appsettings.json
 nul
+
+*.db-shm
+*.db-wal

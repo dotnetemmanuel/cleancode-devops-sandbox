@@ -8,7 +8,16 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("Default") ??
                        throw new InvalidOperationException("missing connection string 'Default' .");
 
-builder.Services.AddDbContext<TodoDbContext>(options => options.UseSqlServer(connectionString));
+var useSqlite = builder.Configuration.GetValue<bool>("UseSqlite");
+
+if (useSqlite)
+{
+    builder.Services.AddDbContext<TodoDbContext>(options => options.UseSqlite(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<TodoDbContext>(options => options.UseSqlServer(connectionString));
+}
 
 builder.Services.AddScoped<ITodoRepository, TodoRepository>();
 
