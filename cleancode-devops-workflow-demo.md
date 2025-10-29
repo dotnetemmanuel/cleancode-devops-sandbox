@@ -3,7 +3,7 @@
 
 > !Add link
 
-- **Create a .NET 9 Console App via Rider/Visual Studio**
+- **Create a .NET 9 Console App via Rider/Visual Studio** - `CleanCodeDevOps.App`
 > Test the Hello World
 > Add to .gitignore
 ```
