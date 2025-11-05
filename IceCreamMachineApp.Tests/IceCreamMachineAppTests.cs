@@ -28,6 +28,53 @@ public class IceCreamMachineAppTests
 
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void GetPrice_ShouldReturn50_ForXL()
+    {
+        var machine = new IceCreamMachine();
+        var price = machine.GetPrice("XL");
+        
+        Assert.Equal(50, price);
+    }
+
+    [Theory]
+    [InlineData("S", 10)]
+    [InlineData("M", 30)]
+    [InlineData("L", 40)]
+    [InlineData("XL", 50)]
+    [InlineData("XXL", 0)] //ogiltig storlek
+    public void GetPrice_ShouldReturnCorrectPrice(string size, int expected)
+    {
+        var machine = new IceCreamMachine();
+        var price = machine.GetPrice(size);
+        
+        Assert.Equal(expected, price);
+    }
+    
+    [Fact]
+    public void IsValidSize_ShouldReturnTrue_ForM()
+    {
+        var machine = new IceCreamMachine();
+        var result = machine.IsValidSize("M");
+
+        Assert.True(result);
+    }
+    
+    [Theory]
+    [InlineData("S", true)]
+    [InlineData("M", true)]
+    [InlineData("L", true)]
+    [InlineData("XL", true)]
+    [InlineData("XXL", false)]
+    [InlineData("", false)]
+    public void IsValidSize_ShouldReturnExpectedResult(string size, bool expected)
+    {
+        var machine = new IceCreamMachine();
+        var result = machine.IsValidSize(size);
+
+        Assert.Equal(expected, result);
+    }
 } 
 
 

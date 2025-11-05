@@ -38,7 +38,7 @@ I sådana fall bör man skapa en ny instans per test.
 
 ## Demo 2 - Use `IClassFixture`
 
-### 🧮 Step 1: `AdvancedCalculator.cs` Class with Propertie
+### 🧮 Step 1: `AdvancedCalculator.cs` Class with Properties
 
 ```csharp
 public class AdvancedCalculator {
@@ -499,4 +499,20 @@ public class AccessServiceTests
       var actual = _sut.CanAccessRestrictedArea(employee);
       Assert.Equal(expected, actual);
   }
+}
+
+# Extra tester - Unhappy paths
+
+// Add to class AdvancedCalculatorTheoryTests
+[Theory]
+[InlineData(null)]
+[InlineData("")]
+[InlineData("   ")]
+public void Owner_SetToInvalid_ThrowsArgumentException(string invalidOwner)
+{
+    // Arrange
+    var sut = new AdvancedCalculator();
+
+    // Act & Assert
+    Assert.Throws<ArgumentException>(() => sut.Owner = invalidOwner);
 }

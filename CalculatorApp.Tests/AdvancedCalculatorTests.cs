@@ -66,5 +66,25 @@ public class AdvancedCalculatorTests : IClassFixture<AdvancedCalculatorFixture>
         // Assert
         Assert.Equal(expected, actual);
     }
+    
+    [Theory]
+    [InlineData("Daniel", true)]
+    [InlineData("StudentCalc", false)]
+    [InlineData("TI-84 Plus", true)]
+    public void OwnerName_IsScientificFlagMatches(string owner, bool expectedScientific)
+    {
+        // Arrange
+        var sut = new AdvancedCalculator
+        {
+            Owner = owner,
+            IsScientific = expectedScientific
+        };
+
+        // Act
+        var actual = sut.IsScientific;
+
+        // Assert
+        Assert.Equal(expectedScientific, actual);
+    }
 
 }

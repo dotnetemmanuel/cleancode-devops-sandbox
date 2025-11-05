@@ -14,4 +14,16 @@ public class IceCreamMachine
     {
         return scoopTable.TryGetValue(size, out var scoops) ? scoops : 0;
     }
+
+    public int GetPrice(string size)
+    {
+        var scoops = GetScoops(size);
+        return scoops * 10;
+    }
+    
+    public bool IsValidSize(string size)
+    {
+        return scoopTable.ContainsKey(size);
+    }
+
 }
