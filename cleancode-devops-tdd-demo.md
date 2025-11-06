@@ -242,6 +242,18 @@ public void IsValidSize_ShouldReturnExpectedResult(string size, bool expected)
 }
 ```
 
----
+✅ Happy paths
+Det är de fall där allt fungerar som förväntat:
+- "S", "M", "L", "XL" är giltiga storlekar.
+- GetScoops returnerar rätt antal kulor.
+- GetPrice ger korrekt pris baserat på kulor × 10 kr.
+- IsValidSize returnerar true för giltiga storlekar.
 
-Vill du att vi bygger vidare med t.ex. smaker, toppings eller kampanjer? Jag kan ta fram fler exempel som passar in i samma struktur.
+
+❌ Unhappy paths
+Det är de fall där input är felaktig, oväntad eller ogiltig — och vi testar att systemet hanterar dem korrekt:
+- "XXL" är en ogiltig storlek → GetScoops returnerar 0, GetPrice returnerar 0, IsValidSize returnerar false.
+- "" (tom sträng) → IsValidSize returnerar false.
+- null → IsValidSize returnerar false.
+
+---
