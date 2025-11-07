@@ -2,8 +2,7 @@
 
 public class ValidatorTests
 {
-    [Theory]
-    
+    [Theory]    
     [InlineData("Password1!", true)] // Happy path – uppfyller alla krav: längd, versal, siffra, specialtecken
     [InlineData("pass", false)] // Unhappy path – för kort, saknar flera krav
     [InlineData("PASSWORD123", false)] // Unhappy path – saknar specialtecken
