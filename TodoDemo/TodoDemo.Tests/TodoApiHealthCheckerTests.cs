@@ -1,10 +1,10 @@
 ﻿namespace TodoDemo.Tests;
 
-public class TodoApiHealthCheckerTests : IClassFixture<CustomWebApplicationFactory>
+public class TodoApiHealthCheckerTests : IClassFixture<CustomWebApplicationFactory<Program>>
 { 
     private readonly HttpClient _client;
 
-    public TodoApiHealthCheckerTests(CustomWebApplicationFactory factory)
+    public TodoApiHealthCheckerTests(CustomWebApplicationFactory<Program> factory)
     {
         _client = factory.CreateClient();
     }

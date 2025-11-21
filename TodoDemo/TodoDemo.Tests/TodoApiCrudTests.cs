@@ -4,11 +4,11 @@ using TodoDemo.Models;
 
 namespace TodoDemo.Tests;
 
-public class TodoApiCrudTests : IClassFixture<CustomWebApplicationFactory>
+public class TodoApiCrudTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
 
-    public TodoApiCrudTests(CustomWebApplicationFactory factory)
+    public TodoApiCrudTests(CustomWebApplicationFactory<Program> factory)
     {
         _client = factory.CreateClient();
     }
