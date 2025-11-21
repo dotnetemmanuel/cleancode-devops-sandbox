@@ -18,10 +18,9 @@ Visa hur man skriver och kör integrationstester i .NET för ett riktigt API och
       => SKAPA
 
       => Lägg till följande nuget packages:
-      - `FluentAssertions`
       - `Microsoft.AspNetCore.Mvc.Testing`
       - `Microsoft.Data.SqlClient`
-      - `Microsoft.EntityFrameworkCore.SqlServer`
+      - `Microsoft.EntityFrameworkCore.Sqlite`
 
       => lägga till 'Följande kod till test csproj
 
@@ -81,18 +80,9 @@ Visa hur man skriver och kör integrationstester i .NET för ett riktigt API och
 ## **Steg 2: Testkonfiguration**
 
 **Visa:**
-- `appsettings.Test.json` med testdatabasens connection string.
 - `xunit.runner.json` med `shadowCopy: false` för att undvika problem med saknade .deps-filer. => SKAPA
 
 **Exempel:**
-```json
-{
-  "ConnectionStrings": {
-    "Default": "Data Source=:memory:"
-  },
-  "UseSqlite": true
-}
-```
 
 ```json
 {
@@ -111,49 +101,99 @@ Visa hur man skriver och kör integrationstester i .NET för ett riktigt API och
 [TodoDemo.Tests/CustomWebApplicationFactory.cs](file:///D:/Education/cleancode-devops-sandbox/TodoDemo/TodoDemo.Tests/CustomWebApplicationFactory.cs)
 
 ```csharp
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TodoDemo.Data;
 
 namespace TodoDemo.Tests;
 
-public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+// This class helps us spin up a fake version of our web app — just for testing.
+// It lets us swap out real services (like the database) with test-friendly ones.
+public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
 {
-  private SqliteConnection? _connection;
+    // TProgram = just a placeholder name for the app’s starting class (usually called Program).
+    // Think of it like saying: "Use whatever class starts the app here."
 
-     protected override IHost CreateHost(IHostBuilder builder)
-     {
-        builder.UseEnvironment("Test");
+    // : class = a simple rule that says:
+    // "TProgram must be a real class, not a number or a tiny data type."
+
+    // This method lets us change how the web part of the app is set up — like replacing services.
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
         builder.ConfigureServices(services =>
         {
-           var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<TodoDbContext>));
-           if (descriptor != null)
-              services.Remove(descriptor);
+            // 🧹 Step 1: Remove the app’s original database setup.
+            // Why? Because Program.cs already told the app to use the "real" database.
+            // In tests we don’t want that, so we take it out here.
 
-           _connection = new SqliteConnection("Data Source=:memory:");
-           _connection.Open();
+            // A "descriptor" is just a little note that says:
+            // "This service type has been registered in the app’s service list."
+            // Here we look for the descriptor that matches DbContextOptions<TodoDbContext>,
+            // which is the setup for the real database. If we find it, we remove it.
 
-           services.AddDbContext<TodoDbContext>(options =>
-           {
-              options.UseSqlite(_connection);
-           });
+            var descriptor = services.SingleOrDefault(d =>
+                d.ServiceType == typeof(DbContextOptions<TodoDbContext>));
+            if (descriptor != null)
+                services.Remove(descriptor);
 
-           var sp = services.BuildServiceProvider();
-           using var scope = sp.CreateScope();
-           var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
-           db.Database.EnsureCreated();
+            // 🧹 Step 2: Remove any existing SQLite connection.
+            // Descriptor here means: "a description of a service that was registered."
+            // If the app already had a SQLite connection lying around, we clear it out
+            // so we don’t accidentally use the wrong one in tests.
+            var dbConnectionDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(SqliteConnection));
+            if (dbConnectionDescriptor != null)
+                services.Remove(dbConnectionDescriptor);
+
+            // 🧪 Step 3: Add a new SQLite connection that lives only in memory.
+            // This means the database is super fast and disappears after the test ends.
+            // We keep the connection open so EF Core can reuse it during the whole test run.
+
+            services.AddSingleton<SqliteConnection>(container =>
+            {
+                var connection = new SqliteConnection("DataSource=:memory:");
+                connection.Open(); // Keep it open so EF Core doesn’t wipe it between uses.
+                return connection;
+            });
+
+            // 🧪 Step 4: Register our test version of the database context.
+            // Here we tell EF Core: "Use the in‑memory SQLite connection we just created."
+            // So whenever the app asks for TodoDbContext in tests, it gets this fake one.
+
+            services.AddDbContext<TodoDbContext>((container, options) =>
+            {
+                var connection = container.GetRequiredService<SqliteConnection>();
+                options.UseSqlite(connection);
+            });
         });
-        return base.CreateHost(builder);
-     }
+    }
 
-     protected override void Dispose(bool disposing)
-     {
-        base.Dispose(disposing);
-        _connection?.Close();
-        _connection?.Dispose();
-     }
+    // This method runs after the app is fully built.
+    // We use it to make sure the test database is ready to go.
+    // We override it so we can do some extra setup just for tests.
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder); // Build the app like normal (using Program.cs and all its settings).
+
+        // 🛠️ Extra step for tests:
+        // After the app is built, we make sure the test database is ready.
+        // Think of it like saying: "Before we run any tests, check that the tables exist."
+
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+        db.Database.EnsureCreated(); 
+        // This command creates the database tables if they don’t already exist.
+        // It’s like setting up the playing field before the game starts.
+
+
+        return host; // Finally, return the fully prepared test host.
+
+    }
 }
 ```
 
@@ -168,17 +208,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 [TodoDemo.Tests/TodoApiHealthCheckerTests.cs](file:///D:/Education/cleancode-devops-sandbox/TodoDemo/TodoDemo.Tests/TodoApiHealthCheckerTests.cs)
 
 ```csharp
-using System.Net.Http;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace TodoDemo.Tests;
 
-public class TodoApiHealthCheckerTests : IClassFixture<CustomWebApplicationFactory>
-{
+public class TodoApiHealthCheckerTests : IClassFixture<CustomWebApplicationFactory<Program>>
+{ 
     private readonly HttpClient _client;
 
-    public TodoApiHealthCheckerTests(CustomWebApplicationFactory factory)
+    public TodoApiHealthCheckerTests(CustomWebApplicationFactory<Program> factory)
     {
         _client = factory.CreateClient();
     }
@@ -186,7 +222,13 @@ public class TodoApiHealthCheckerTests : IClassFixture<CustomWebApplicationFacto
     [Fact]
     public async Task HealthCheck_ReturnsSuccessAndJson()
     {
-        var response = await _client.GetAsync("/api/todos");
+        //Arrange
+        var requestUri = "/api/todos";
+
+        //Act
+        var response = await _client.GetAsync(requestUri);
+
+        //Assert
         response.EnsureSuccessStatusCode();
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
         Assert.True(response.Content.Headers.ContentLength > 0);
@@ -207,17 +249,15 @@ public class TodoApiHealthCheckerTests : IClassFixture<CustomWebApplicationFacto
 ```csharp
 using System.Net;
 using System.Net.Http.Json;
-using System.Threading.Tasks;
-using Xunit;
-using TodoDemo.Data; // Justera namespace om nödvändigt
+using TodoDemo.Models;
 
 namespace TodoDemo.Tests;
 
-public class TodoApiCrudTests : IClassFixture<CustomWebApplicationFactory>
+public class TodoApiCrudTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
 
-    public TodoApiCrudTests(CustomWebApplicationFactory factory)
+    public TodoApiCrudTests(CustomWebApplicationFactory<Program> factory)
     {
         _client = factory.CreateClient();
     }
@@ -225,46 +265,58 @@ public class TodoApiCrudTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task CanCreateTodo()
     {
+        //Arrange
         var newTodo = new TodoItem
         {
-            Title = "Integration Test",
+            Title = "Integration Test Todo",
             Description = "Created by integration test",
             IsDone = false
         };
 
+        //Act
         var response = await _client.PostAsJsonAsync("/api/todos", newTodo);
-        response.EnsureSuccessStatusCode();
 
+        //Assert
+        response.EnsureSuccessStatusCode();
         var created = await response.Content.ReadFromJsonAsync<TodoItem>();
         Assert.NotNull(created);
         Assert.Equal(newTodo.Title, created.Title);
         Assert.Equal(newTodo.Description, created.Description);
         Assert.False(created.IsDone);
+        Assert.True(created.Id > 0);
     }
 
     [Fact]
     public async Task CanReadTodo()
     {
+        //Arrange
         var newTodo = new TodoItem
         {
             Title = "Read Test",
             Description = "Read test desc",
             IsDone = false
         };
+
         var createResp = await _client.PostAsJsonAsync("/api/todos", newTodo);
         var created = await createResp.Content.ReadFromJsonAsync<TodoItem>();
 
+        //Act
         var getResp = await _client.GetAsync($"/api/todos/{created.Id}");
+
+        //Assert
         getResp.EnsureSuccessStatusCode();
         var fetched = await getResp.Content.ReadFromJsonAsync<TodoItem>();
         Assert.NotNull(fetched);
         Assert.Equal(created.Id, fetched.Id);
-        Assert.Equal(newTodo.Title, fetched.Title);
+        Assert.Equal(created.Title, fetched.Title);
+        Assert.Equal(created.Description, fetched.Description);
+        Assert.False(fetched.IsDone);
     }
 
     [Fact]
     public async Task CanUpdateTodo()
     {
+        //Arrange
         var newTodo = new TodoItem
         {
             Title = "Update Test",
@@ -274,11 +326,14 @@ public class TodoApiCrudTests : IClassFixture<CustomWebApplicationFactory>
         var createResp = await _client.PostAsJsonAsync("/api/todos", newTodo);
         var created = await createResp.Content.ReadFromJsonAsync<TodoItem>();
 
+        //Act
         created.Title = "Updated Title";
         created.Description = "After update";
         created.IsDone = true;
 
         var updateResp = await _client.PutAsJsonAsync($"/api/todos/{created.Id}", created);
+
+        //Assert
         updateResp.EnsureSuccessStatusCode();
 
         var getResp = await _client.GetAsync($"/api/todos/{created.Id}");
@@ -291,34 +346,42 @@ public class TodoApiCrudTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task CanDeleteTodo()
     {
+        //Arrange
         var newTodo = new TodoItem
         {
             Title = "Delete Test",
             Description = "To be deleted",
             IsDone = false
         };
-        var createResp = await _client.PostAsJsonAsync("/api/todos", newTodo);
-        var created = await createResp.Content.ReadFromJsonAsync<TodoItem>();
+        
+        var createdResp = await _client.PostAsJsonAsync("/api/todos", newTodo);
+        var created = await createdResp.Content.ReadFromJsonAsync<TodoItem>();
 
+        //Act
         var deleteResp = await _client.DeleteAsync($"/api/todos/{created.Id}");
+
+        //Assert
         Assert.Equal(HttpStatusCode.NoContent, deleteResp.StatusCode);
 
         var getResp = await _client.GetAsync($"/api/todos/{created.Id}");
         Assert.Equal(HttpStatusCode.NotFound, getResp.StatusCode);
     }
-
+    
     [Fact]
     public async Task CanListTodos()
     {
-        await _client.PostAsJsonAsync("/api/todos", new TodoItem { Title = "List Test 1", Description = "A", IsDone = false });
-        await _client.PostAsJsonAsync("/api/todos", new TodoItem { Title = "List Test 2", Description = "B", IsDone = false });
+        // Arrange: create a couple of todos
+        await _client.PostAsJsonAsync("/api/todos", new TodoItem { Title = "List 1", Description = "A", IsDone = false });
+        await _client.PostAsJsonAsync("/api/todos", new TodoItem { Title = "List 2", Description = "B", IsDone = false });
 
+        // Act
         var response = await _client.GetAsync("/api/todos");
-        response.EnsureSuccessStatusCode();
 
+        // Assert
+        response.EnsureSuccessStatusCode();
         var todos = await response.Content.ReadFromJsonAsync<List<TodoItem>>();
         Assert.NotNull(todos);
-        Assert.True(todos.Count >= 2);
+        Assert.True(todos.Count >= 2); // Should have at least the two we just added
     }
 }
 ```
